@@ -1,0 +1,36 @@
+# Air 配置文件
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# 指定主程序入口
+cmd = "go build -o ./tmp/main ./cmd/main.go"
+# 构建后的二进制文件路径
+bin = "tmp/main"
+# 监听以下文件变化
+include_ext = ["go", "yaml", "json"]
+# 忽略这些文件夹
+exclude_dir = ["tmp", "vendor", "logs", "build"]
+# 忽略这些文件
+exclude_file = []
+# 延迟重新构建的时间
+delay = 1000
+# 发生错误时停止运行
+stop_on_error = true
+# 在终端打印日志
+log = "air_errors.log"
+
+[log]
+# 显示日志时间
+time = true
+
+[color]
+# 自定义日志颜色
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+# 退出时清理临时目录
+clean_on_exit = true 

@@ -1,0 +1,5 @@
+cmd/temp
+
+config/config.yaml
+
+storage/logs/app/*
