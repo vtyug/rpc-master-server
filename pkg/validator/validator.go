@@ -23,6 +23,7 @@ var (
 	apiKeyRegex       = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
 	nameRegex         = regexp.MustCompile(`^\S+$`)
 	collectionIDRegex = regexp.MustCompile(`^[1-9]\d*$`)
+	parentIDRegex     = regexp.MustCompile(`^[1-9]\d*$`)
 )
 
 func Setup() {
@@ -50,6 +51,7 @@ func registerCustomValidators(v *validator.Validate) {
 		"api_key":       validateAPIKey,
 		"name":          validateName,
 		"collection_id": validateCollectionID,
+		"parent_id":     validateParentID,
 	}
 
 	for tag, fn := range validations {
@@ -118,10 +120,16 @@ func validateName(fl validator.FieldLevel) bool {
 }
 
 func validateCollectionID(fl validator.FieldLevel) bool {
-	return collectionIDRegex.MatchString(fl.Field().String())
+	id := fl.Field().String()
+	return collectionIDRegex.MatchString(id)
 }
 
-// TranslateError 翻译验证错误为中文
+func validateParentID(fl validator.FieldLevel) bool {
+	id := fl.Field().String()
+	return parentIDRegex.MatchString(id)
+}
+
+// TranslateError 翻译验证错为中文
 func TranslateError(err error) string {
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		messages := make([]string, 0, len(errs))
@@ -156,6 +164,8 @@ func TranslateError(err error) string {
 				msg = "名称不能为空且不能包含空格"
 			case "collection_id":
 				msg = "集合ID格式不正确，必须是正整数"
+			case "parent_id":
+				msg = "父文件夹ID格式不正确，必须是正整数"
 			default:
 				msg = "字段 " + e.Field() + " 验证失败"
 			}
