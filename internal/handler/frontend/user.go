@@ -13,7 +13,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 // UserHandler 处理用户相关的请求
@@ -31,10 +30,10 @@ func NewUserHandler() *UserHandler {
 }
 
 // RegisterRoutes 注册用户模块的路由
-func (h *UserHandler) RegisterRoutes(registry *router.RouteRegistry) {
-	registry.Register("POST", "user", "/login", h.Login, 1, "用户登录")
-	registry.Register("POST", "user", "/register", h.Register, 1, "用户注册")
-	registry.Register("GET", "user", "/profile", h.Profile, 1, "获取用户信息")
+func (h *UserHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) {
+	routerRegistry.Register("POST", "user", "/login", h.Login, 1, "用户登录")
+	routerRegistry.Register("POST", "user", "/register", h.Register, 1, "用户注册")
+	routerRegistry.Register("GET", "user", "/profile", h.Profile, 1, "获取用户信息")
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
@@ -50,7 +49,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	jwtService := jwt.New("yug-fastgo")
 	token, err := jwtService.GenerateToken(user.ID, user.Username, user.Role)
 	if err != nil {
-		result.FailWithError(response.ServerError, "Token 生成失败")
+		// result.FailWithError(response.ServerError, "Token 生成失败")
 		return
 	}
 
@@ -97,16 +96,12 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 生成唯一的 API Key
-	apiKey := uuid.New().String()
-
 	user := model.User{
 		Username:    registerData.Username,
 		Password:    hashedPassword,
 		Email:       registerData.Email,
 		PhoneNumber: registerData.PhoneNumber,
 		GitHubID:    registerData.GitHubID,
-		ApiKey:      apiKey,
 	}
 
 	if err := h.DB.Create(&user).Error; err != nil {

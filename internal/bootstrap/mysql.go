@@ -55,7 +55,13 @@ func Migrate() {
 	}
 
 	err := global.GetDB().AutoMigrate(
-		&model.User{}, // 添加其他模型
+		// &model.User{},
+		// &model.Team{},
+		// &model.TeamMember{},
+		// &model.TeamInvite{},
+		&model.Collections{},
+		&model.Folder{},
+		&model.FolderClosure{},
 	)
 	if err != nil {
 		global.Log.Error("数据库迁移失败", zap.Error(err))

@@ -66,10 +66,5 @@ func (s *LoginService) Login(c *gin.Context) (*model.User, error) {
 		return nil, errors.New("用户不存在或密码错误")
 	}
 
-	// 检查 API Key
-	if loginData.ApiKey != user.ApiKey {
-		return nil, errors.New("API Key 错误")
-	}
-
 	return &user, nil
 }

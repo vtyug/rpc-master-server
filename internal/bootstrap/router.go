@@ -8,8 +8,8 @@ import (
 
 func SetupRoutes() {
 	engine := global.Engine
-	registry := router.NewRouteRegistry()
+	routerRegistry := router.NewRouteRegistry()
 
-	frontend.RegisterFrontendRoutes(registry)
-	registry.SetupRoutes(engine)
+	frontend.RegisterFrontendRoutes(routerRegistry)
+	routerRegistry.SetupRoutes(engine)
 }

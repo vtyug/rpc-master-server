@@ -23,7 +23,6 @@ type User struct {
 	LastLoginAt *time.Time     `gorm:"type:datetime" json:"last_login_at"`
 	LastLoginIP string         `gorm:"type:varchar(64)" json:"last_login_ip"`
 	Status      uint8          `gorm:"default:1" json:"status"`
-	ApiKey      string         `gorm:"type:varchar(64);unique" json:"api_key,omitempty"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

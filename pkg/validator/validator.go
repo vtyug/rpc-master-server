@@ -10,36 +10,52 @@ import (
 )
 
 var (
-	mobileRegex     = regexp.MustCompile(`^1[3-9]\d{9}$`)
-	emailRegex      = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	usernameRegex   = regexp.MustCompile(`^[a-zA-Z0-9_]{4,16}$`)
-	passwordRegex   = regexp.MustCompile(`^[a-zA-Z0-9!@#$%^&*]{6,20}$`)
-	urlRegex        = regexp.MustCompile(`^(http|https):\/\/[^\s$.?#].[^\s]*$`)
-	ipRegex         = regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
-	dateRegex       = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	postalCodeRegex = regexp.MustCompile(`^\d{6}$`)
-	idCardRegex     = regexp.MustCompile(`^\d{15}|\d{18}$`)
-	idRegex         = regexp.MustCompile(`^[1-9]\d*$`)
-	apiKeyRegex     = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
+	mobileRegex       = regexp.MustCompile(`^1[3-9]\d{9}$`)
+	emailRegex        = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	usernameRegex     = regexp.MustCompile(`^[a-zA-Z0-9_]{4,16}$`)
+	passwordRegex     = regexp.MustCompile(`^[a-zA-Z0-9!@#$%^&*]{6,20}$`)
+	urlRegex          = regexp.MustCompile(`^(http|https):\/\/[^\s$.?#].[^\s]*$`)
+	ipRegex           = regexp.MustCompile(`^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$`)
+	dateRegex         = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	postalCodeRegex   = regexp.MustCompile(`^\d{6}$`)
+	idCardRegex       = regexp.MustCompile(`^\d{15}|\d{18}$`)
+	idRegex           = regexp.MustCompile(`^[1-9]\d*$`)
+	apiKeyRegex       = regexp.MustCompile(`^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
+	nameRegex         = regexp.MustCompile(`^\S+$`)
+	collectionIDRegex = regexp.MustCompile(`^[1-9]\d*$`)
 )
 
 func Setup() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		log.Println("Registering custom validators")
-		_ = v.RegisterValidation("mobile", validateMobile)
-		_ = v.RegisterValidation("email", validateEmail)
-		_ = v.RegisterValidation("username", validateUsername)
-		_ = v.RegisterValidation("password", validatePassword)
-		_ = v.RegisterValidation("chinese", validateChinese)
-		_ = v.RegisterValidation("url", validateURL)
-		_ = v.RegisterValidation("ip", validateIP)
-		_ = v.RegisterValidation("date", validateDate)
-		_ = v.RegisterValidation("postalcode", validatePostalCode)
-		_ = v.RegisterValidation("idcard", validateIDCard)
-		_ = v.RegisterValidation("id", validateID)
-		_ = v.RegisterValidation("api_key", validateAPIKey)
+		registerCustomValidators(v)
 	} else {
 		log.Println("Failed to register custom validators")
+	}
+}
+
+func registerCustomValidators(v *validator.Validate) {
+	validations := map[string]func(validator.FieldLevel) bool{
+		"mobile":        validateMobile,
+		"email":         validateEmail,
+		"username":      validateUsername,
+		"password":      validatePassword,
+		"chinese":       validateChinese,
+		"url":           validateURL,
+		"ip":            validateIP,
+		"date":          validateDate,
+		"postalcode":    validatePostalCode,
+		"idcard":        validateIDCard,
+		"id":            validateID,
+		"api_key":       validateAPIKey,
+		"name":          validateName,
+		"collection_id": validateCollectionID,
+	}
+
+	for tag, fn := range validations {
+		if err := v.RegisterValidation(tag, fn); err != nil {
+			log.Printf("Failed to register validation for %s: %v", tag, err)
+		}
 	}
 }
 
@@ -97,39 +113,62 @@ func validateAPIKey(fl validator.FieldLevel) bool {
 	return apiKeyRegex.MatchString(fl.Field().String())
 }
 
+func validateName(fl validator.FieldLevel) bool {
+	return nameRegex.MatchString(fl.Field().String())
+}
+
+func validateCollectionID(fl validator.FieldLevel) bool {
+	return collectionIDRegex.MatchString(fl.Field().String())
+}
+
 // TranslateError 翻译验证错误为中文
 func TranslateError(err error) string {
 	if errs, ok := err.(validator.ValidationErrors); ok {
+		messages := make([]string, 0, len(errs))
 		for _, e := range errs {
+			var msg string
 			switch e.Tag() {
 			case "required":
-				return "字段 " + e.Field() + " 是必填项"
+				msg = "字段 " + e.Field() + " 是必填项"
 			case "username":
-				return "用户名必须是4到16位的字母、数字或下划线"
+				msg = "用户名必须是4到16位的字母、数字或下划线"
 			case "password":
-				return "密码必须是6到20位的字母、数字或特殊字符"
+				msg = "密码必须是6到20位的字母、数字或特殊字符"
 			case "email":
-				return "邮箱格式不正确"
+				msg = "邮箱格式不正确"
 			case "mobile":
-				return "手机号格式不正确"
+				msg = "手机号格式不正确"
 			case "url":
-				return "URL 格式不正确"
+				msg = "URL 格式不正确"
 			case "ip":
-				return "IP 地址格式不正确"
+				msg = "IP 地址格式不正确"
 			case "date":
-				return "日期格式不正确，格式应为 YYYY-MM-DD"
+				msg = "日期格式不正确，格式应为 YYYY-MM-DD"
 			case "postalcode":
-				return "邮政编码格式不正确"
+				msg = "邮政编码格式不正确"
 			case "idcard":
-				return "身份证号码格式不正确"
+				msg = "身份证号码格式不正确"
 			case "id":
-				return "ID 格式不正确，必须是正整数"
+				msg = "ID 格式不正确，必须是正整数"
 			case "api_key":
-				return "API Key 格式不正确"
+				msg = "API Key 格式不正确"
+			case "name":
+				msg = "名称不能为空且不能包含空格"
+			case "collection_id":
+				msg = "集合ID格式不正确，必须是正整数"
 			default:
-				return "字段 " + e.Field() + " 验证失败"
+				msg = "字段 " + e.Field() + " 验证失败"
 			}
+			messages = append(messages, msg)
 		}
+		return joinMessages(messages)
 	}
 	return err.Error()
+}
+
+func joinMessages(messages []string) string {
+	if len(messages) == 0 {
+		return ""
+	}
+	return messages[0] // 只返回第一个错误信息
 }

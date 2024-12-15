@@ -2,7 +2,13 @@ package frontend
 
 import "FastGo/internal/router"
 
-func RegisterFrontendRoutes(registry *router.RouteRegistry) {
+func RegisterFrontendRoutes(routerRegistry *router.RouteRegistry) {
 	userHandler := NewUserHandler()
-	userHandler.RegisterRoutes(registry)
+	userHandler.RegisterRoutes(routerRegistry)
+
+	collectionHandler := NewCollectionHandler()
+	collectionHandler.RegisterRoutes(routerRegistry)
+
+	folderHandler := NewFolderHandler()
+	folderHandler.RegisterRoutes(routerRegistry)
 }
