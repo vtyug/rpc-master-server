@@ -35,7 +35,7 @@ func (r *RouteRegistry) Register(method, group, path string, handlerFunc gin.Han
 	if group == "" {
 		panic("group is required")
 	}
-	fullPath := "/" + group + path
+	fullPath := "/api/" + group + path
 	r.routes = append(r.routes, RouteConfig{
 		Method:      method,
 		Path:        fullPath,

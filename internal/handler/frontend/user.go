@@ -10,8 +10,6 @@ import (
 	"FastGo/pkg/validator"
 	"FastGo/utils"
 
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -61,56 +59,43 @@ func (h *UserHandler) Login(c *gin.Context) {
 
 func (h *UserHandler) Register(c *gin.Context) {
 	var registerData struct {
-		Username    string  `json:"username" binding:"required,username"`
-		Password    string  `json:"password" binding:"required,password"`
-		Email       *string `json:"email,omitempty"`
-		PhoneNumber *string `json:"phone_number,omitempty"`
-		GitHubID    *string `json:"github_id,omitempty"`
+		Username string `json:"username"`
+		Password string `json:"password"`
 	}
 
+	result := response.NewResult(c)
+
 	if err := c.ShouldBindJSON(&registerData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": validator.TranslateError(err)})
+		result.FailWithError(response.InvalidParams, validator.TranslateError(err))
 		return
 	}
 
-	// 检查非空字段的唯一性
-	if registerData.Email != nil {
-		var existingUser model.User
-		if err := h.DB.Where("email = ?", *registerData.Email).First(&existingUser).Error; err == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱已被注册"})
-			return
-		}
-	}
+	
 
-	if registerData.GitHubID != nil {
-		var existingUser model.User
-		if err := h.DB.Where("git_hub_id = ?", *registerData.GitHubID).First(&existingUser).Error; err == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "GitHub ID 已被注册"})
-			return
-		}
+	// 检查用户名是否已存在
+	var existingUser model.User
+	if err := h.DB.Where("username = ?", registerData.Username).First(&existingUser).Error; err == nil {
+		result.FailWithMsg(response.InvalidParams, "username already exists")
+		return
 	}
 
 	hashedPassword, err := utils.HashPassword(registerData.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		result.FailWithMsg(response.ServerError, "password encryption failed")
 		return
 	}
 
 	user := model.User{
-		Username:    registerData.Username,
-		Password:    hashedPassword,
-		Email:       registerData.Email,
-		PhoneNumber: registerData.PhoneNumber,
-		GitHubID:    registerData.GitHubID,
+		Username: registerData.Username,
+		Password: hashedPassword,
 	}
 
 	if err := h.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "用户创建失败"})
+		result.FailWithMsg(response.ServerError, "register failed")
 		return
 	}
 
-	result := response.NewResult(c)
-	result.Success("注册成功")
+	result.Success(nil)
 }
 
 func (h *UserHandler) Profile(c *gin.Context) {

@@ -5,10 +5,10 @@ import (
 	"FastGo/internal/model"
 	"FastGo/internal/router"
 	"FastGo/pkg/response"
+	"FastGo/pkg/uid"
 	"FastGo/pkg/validator"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 	"go.uber.org/zap"
 )
 
@@ -31,9 +31,9 @@ func (h *FolderHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) {
 // Create 创建文件夹的处理函数
 func (h *FolderHandler) Create(c *gin.Context) {
 	var req struct {
-		CollectionID string `json:"collection_id" binding:"required,collection_id"`
+		CollectionID string `json:"collection_id" binding:"required,uuid"`
 		Name         string `json:"name"`
-		ParentID     string `json:"parent_id" binding:"required,parent_id"`
+		ParentID     string `json:"parent_id"`
 	}
 	result := response.NewResult(c)
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,11 +45,12 @@ func (h *FolderHandler) Create(c *gin.Context) {
 	if req.Name == "" {
 		req.Name = "New Folder"
 	}
+
 	// 查找集合
 	var collection model.Collections
-	if err := h.DB.First(&collection, req.CollectionID).Error; err != nil {
+	if err := h.DB.Where("collection_id = ?", req.CollectionID).First(&collection).Error; err != nil {
 		h.Logger.Error("get collection failed due to database error", zap.Error(err))
-		result.FailWithMsg(response.ServerError, "获取集合失败")
+		result.FailWithMsg(response.ServerError, "get collection failed")
 		return
 	}
 
@@ -57,54 +58,73 @@ func (h *FolderHandler) Create(c *gin.Context) {
 	folder := model.Folder{
 		CollectionID: collection.ID,
 		Name:         req.Name,
+		FolderID:     uid.NewUUID(),
 	}
 
 	if err := h.DB.Create(&folder).Error; err != nil {
 		h.Logger.Error("create folder failed due to database error", zap.Error(err))
-		result.FailWithMsg(response.ServerError, "创建文件夹失败")
+		result.FailWithMsg(response.ServerError, "create folder failed")
 		return
 	}
 
 	// 更新闭包表
-	// 插入新文件夹与其自身的关系
 	closure := model.FolderClosure{
-		Ancestor:   folder.ID,
-		Descendant: folder.ID,
+		Ancestor:   folder.FolderID,
+		Descendant: folder.FolderID,
 		Depth:      0,
 	}
 	if err := h.DB.Create(&closure).Error; err != nil {
 		h.Logger.Error("create folder closure failed", zap.Error(err))
-		result.FailWithMsg(response.ServerError, "更新文件夹关系失败")
+		result.FailWithMsg(response.ServerError, "update folder closure failed")
 		return
 	}
 
 	// 如果提供了 ParentID，插入父子关系
-	if cast.ToUint64(req.ParentID) != 0 {
-		// 获取父节点的所有祖先关系
+	if req.ParentID != "" {
 		var parentClosures []model.FolderClosure
-		if err := h.DB.Where("descendant = ?", cast.ToUint64(req.ParentID)).Find(&parentClosures).Error; err != nil {
+		if err := h.DB.Where("descendant = ?", req.ParentID).Find(&parentClosures).Error; err != nil {
 			h.Logger.Error("get parent folder closures failed", zap.Error(err))
-			result.FailWithMsg(response.ServerError, "获取父文件夹关系失败")
+			result.FailWithMsg(response.ServerError, "get parent folder closures failed")
 			return
 		}
 
-		// 为新节点插入所有祖先关系
 		for _, pc := range parentClosures {
+			// 检查是否已经存在相同的祖先-后代关系
+			var existingClosure model.FolderClosure
+			if err := h.DB.Where("ancestor = ? AND descendant = ?", pc.Ancestor, folder.FolderID).First(&existingClosure).Error; err == nil {
+				continue // 如果关系已经存在，跳过插入
+			}
+
 			newClosure := model.FolderClosure{
 				Ancestor:   pc.Ancestor,
-				Descendant: folder.ID,
+				Descendant: folder.FolderID,
 				Depth:      pc.Depth + 1,
 			}
 			if err := h.DB.Create(&newClosure).Error; err != nil {
 				h.Logger.Error("create ancestor folder closure failed", zap.Error(err))
-				result.FailWithMsg(response.ServerError, "更新祖先文件夹关系失败")
+				result.FailWithMsg(response.ServerError, "update ancestor folder closure failed")
+				return
+			}
+		}
+
+		// 插入父子关系
+		var parentChildClosure model.FolderClosure
+		if err := h.DB.Where("ancestor = ? AND descendant = ?", req.ParentID, folder.FolderID).First(&parentChildClosure).Error; err != nil {
+			parentChildClosure = model.FolderClosure{
+				Ancestor:   req.ParentID,
+				Descendant: folder.FolderID,
+				Depth:      1,
+			}
+			if err := h.DB.Create(&parentChildClosure).Error; err != nil {
+				h.Logger.Error("create parent-child folder closure failed", zap.Error(err))
+				result.FailWithMsg(response.ServerError, "update parent-child folder closure failed")
 				return
 			}
 		}
 	}
 
 	result.Success(map[string]interface{}{
-		"id": folder.ID,
+		"folder_id": folder.FolderID,
 	})
 }
 
@@ -116,13 +136,13 @@ func (h *FolderHandler) Delete(c *gin.Context) {
 	result := response.NewResult(c)
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.Logger.Error("delete folder failed due to invalid parameters", zap.Error(err))
-		result.FailWithError(response.InvalidParams, err.Error())
+		result.FailWithError(response.InvalidParams, validator.TranslateError(err))
 		return
 	}
 
 	if err := h.DB.Delete(&model.Folder{}, req.ID).Error; err != nil {
 		h.Logger.Error("delete folder failed due to database error", zap.Error(err))
-		result.FailWithMsg(response.ServerError, "删除文件夹失败")
+		result.FailWithMsg(response.ServerError, "delete folder failed")
 		return
 	}
 
@@ -138,13 +158,13 @@ func (h *FolderHandler) Rename(c *gin.Context) {
 	result := response.NewResult(c)
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.Logger.Error("rename folder failed due to invalid parameters", zap.Error(err))
-		result.FailWithError(response.InvalidParams, err.Error())
+		result.FailWithError(response.InvalidParams, validator.TranslateError(err))
 		return
 	}
 
 	if err := h.DB.Model(&model.Folder{}).Where("id = ?", req.ID).Update("name", req.Name).Error; err != nil {
 		h.Logger.Error("rename folder failed due to database error", zap.Error(err))
-		result.FailWithMsg(response.ServerError, "重命名文件夹失败")
+		result.FailWithMsg(response.ServerError, "rename folder failed")
 		return
 	}
 

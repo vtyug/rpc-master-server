@@ -55,10 +55,11 @@ func Migrate() {
 	}
 
 	err := global.GetDB().AutoMigrate(
-		// &model.User{},
+		&model.User{},
 		// &model.Team{},
 		// &model.TeamMember{},
 		// &model.TeamInvite{},
+		&model.Workspace{},
 		&model.Collections{},
 		&model.Folder{},
 		&model.FolderClosure{},

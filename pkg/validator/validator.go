@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"FastGo/internal/global"
 	"log"
 	"regexp"
 	"unicode"
@@ -24,6 +25,7 @@ var (
 	nameRegex         = regexp.MustCompile(`^\S+$`)
 	collectionIDRegex = regexp.MustCompile(`^[1-9]\d*$`)
 	parentIDRegex     = regexp.MustCompile(`^[1-9]\d*$`)
+	workspaceIDRegex  = regexp.MustCompile(`^[1-9]\d*$`)
 )
 
 func Setup() {
@@ -52,6 +54,7 @@ func registerCustomValidators(v *validator.Validate) {
 		"name":          validateName,
 		"collection_id": validateCollectionID,
 		"parent_id":     validateParentID,
+		"workspace_id":  validateWorkspaceID,
 	}
 
 	for tag, fn := range validations {
@@ -59,6 +62,11 @@ func registerCustomValidators(v *validator.Validate) {
 			log.Printf("Failed to register validation for %s: %v", tag, err)
 		}
 	}
+}
+
+func validateWorkspaceID(fl validator.FieldLevel) bool {
+	id := fl.Field().String()
+	return workspaceIDRegex.MatchString(id)
 }
 
 func validateMobile(fl validator.FieldLevel) bool {
@@ -129,45 +137,116 @@ func validateParentID(fl validator.FieldLevel) bool {
 	return parentIDRegex.MatchString(id)
 }
 
-// TranslateError 翻译验证错为中文
+// TranslateError 翻译验证错为中文或英文
 func TranslateError(err error) string {
+	lang := global.Config.Language
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		messages := make([]string, 0, len(errs))
 		for _, e := range errs {
 			var msg string
 			switch e.Tag() {
 			case "required":
-				msg = "字段 " + e.Field() + " 是必填项"
+				if lang == "en" {
+					msg = "Field " + e.Field() + " is required"
+				} else {
+					msg = "字段 " + e.Field() + " 是必填项"
+				}
 			case "username":
-				msg = "用户名必须是4到16位的字母、数字或下划线"
+				if lang == "en" {
+					msg = "Username must be 4 to 16 characters long, consisting of letters, numbers, or underscores"
+				} else {
+					msg = "用户名必须是4到16位的字母、数字或下划线"
+				}
 			case "password":
-				msg = "密码必须是6到20位的字母、数字或特殊字符"
+				if lang == "en" {
+					msg = "Password must be 6 to 20 characters long, consisting of letters, numbers, or special characters"
+				} else {
+					msg = "密码必须是6到20位的字母、数字或特殊字符"
+				}
 			case "email":
-				msg = "邮箱格式不正确"
+				if lang == "en" {
+					msg = "Invalid email format"
+				} else {
+					msg = "邮箱格式不正确"
+				}
 			case "mobile":
-				msg = "手机号格式不正确"
+				if lang == "en" {
+					msg = "Invalid mobile number format"
+				} else {
+					msg = "手机号格式不正确"
+				}
 			case "url":
-				msg = "URL 格式不正确"
+				if lang == "en" {
+					msg = "Invalid URL format"
+				} else {
+					msg = "URL 格式不正确"
+				}
 			case "ip":
-				msg = "IP 地址格式不正确"
+				if lang == "en" {
+					msg = "Invalid IP address format"
+				} else {
+					msg = "IP 地址格式不正确"
+				}
 			case "date":
-				msg = "日期格式不正确，格式应为 YYYY-MM-DD"
+				if lang == "en" {
+					msg = "Invalid date format, should be YYYY-MM-DD"
+				} else {
+					msg = "日期格式不正确，格式应为 YYYY-MM-DD"
+				}
 			case "postalcode":
-				msg = "邮政编码格式不正确"
+				if lang == "en" {
+					msg = "Invalid postal code format"
+				} else {
+					msg = "邮政编码格式不正确"
+				}
 			case "idcard":
-				msg = "身份证号码格式不正确"
+				if lang == "en" {
+					msg = "Invalid ID card number format"
+				} else {
+					msg = "身份证号码格式不正确"
+				}
 			case "id":
-				msg = "ID 格式不正确，必须是正整数"
+				if lang == "en" {
+					msg = "Invalid ID format, must be a positive integer"
+				} else {
+					msg = "ID 格式不正确，必须是正整数"
+				}
 			case "api_key":
-				msg = "API Key 格式不正确"
+				if lang == "en" {
+					msg = "Invalid API Key format"
+				} else {
+					msg = "API Key 格式不正确"
+				}
 			case "name":
-				msg = "名称不能为空且不能包含空格"
+				if lang == "en" {
+					msg = "Name cannot be empty or contain spaces"
+				} else {
+					msg = "名称不能为空且不能包含空格"
+				}
 			case "collection_id":
-				msg = "集合ID格式不正确，必须是正整数"
+				if lang == "en" {
+					msg = "Invalid collection ID format, must be a positive integer"
+				} else {
+					msg = "集合ID格式不正确，必须是正整数"
+				}
 			case "parent_id":
-				msg = "父文件夹ID格式不正确，必须是正整数"
+				if lang == "en" {
+					msg = "Invalid parent folder ID format, must be a positive integer"
+				} else {
+					msg = "父文件夹ID格式不正确，必须是正整数"
+				}
+			case "workspace_id":
+				if lang == "en" {
+					msg = "Invalid workspace ID format, must be a positive integer"
+				} else {
+					msg = "团队ID格式不正确，必须是正整数"
+				}
 			default:
-				msg = "字段 " + e.Field() + " 验证失败"
+				if lang == "en" {
+					msg = "Field " + e.Field() + " validation failed"
+				} else {
+					msg = "字段 " + e.Field() + " 验证失败"
+				}
 			}
 			messages = append(messages, msg)
 		}

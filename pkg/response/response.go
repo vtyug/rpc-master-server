@@ -8,10 +8,11 @@ import (
 
 // Response 基础响应结构
 type Response struct {
-	Code  int         `json:"code"`            // 业务码
-	Msg   string      `json:"msg"`             // 提示信息
-	Data  interface{} `json:"data,omitempty"`  // 数据
-	Error string      `json:"error,omitempty"` // 错误信息，用于调试
+	Code    int         `json:"code"`            // 业务码
+	Msg     string      `json:"msg"`             // 提示信息
+	Data    interface{} `json:"data,omitempty"`  // 数据
+	Error   string      `json:"error,omitempty"` // 错误信息，用于调试
+	Success bool        `json:"success"`         // 请求是否成功
 }
 
 // Result 统一返回结果
@@ -27,33 +28,37 @@ func NewResult(ctx *gin.Context) *Result {
 // Success 成功返回
 func (r *Result) Success(data interface{}) {
 	r.ctx.JSON(http.StatusOK, Response{
-		Code: SUCCESS,
-		Msg:  GetMessage(SUCCESS),
-		Data: data,
+		Code:    Success,
+		Msg:     GetMessage(Success),
+		Data:    data,
+		Success: true,
 	})
 }
 
 // Fail 失败返回
 func (r *Result) Fail(code int) {
 	r.ctx.JSON(http.StatusOK, Response{
-		Code: code,
-		Msg:  GetMessage(code),
+		Code:    code,
+		Msg:     GetMessage(code),
+		Success: false,
 	})
 }
 
 // FailWithMsg 失败返回带自定义消息
 func (r *Result) FailWithMsg(code int, msg string) {
 	r.ctx.JSON(http.StatusOK, Response{
-		Code: code,
-		Msg:  msg,
+		Code:    code,
+		Msg:     msg,
+		Success: false,
 	})
 }
 
 // FailWithError 失败返回带错误信息
 func (r *Result) FailWithError(code int, err string) {
 	r.ctx.JSON(http.StatusOK, Response{
-		Code:  code,
-		Msg:   GetMessage(code),
-		Error: err,
+		Code:    code,
+		Msg:     GetMessage(code),
+		Error:   err,
+		Success: false,
 	})
 }

@@ -21,9 +21,8 @@ func NewLoginService() *LoginService {
 // Login 使用多种方式登录
 func (s *LoginService) Login(c *gin.Context) (*model.User, error) {
 	var loginData struct {
-		Username    string `json:"username"`
-		Password    string `json:"password" binding:"required"`
-		ApiKey      string `json:"api_key" binding:"required"`
+		Username string `json:"username"`
+		Password string `json:"password" binding:"required"`
 		Email       string `json:"email"`
 		PhoneNumber string `json:"phone_number"`
 		GitHubID    string `json:"github_id"`

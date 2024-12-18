@@ -2,7 +2,7 @@ package response
 
 // 系统级错误码
 const (
-	SUCCESS = 200 // 成功码
+	Success = 200 // 成功码
 
 	// 客户端错误码 (400-499)
 	InvalidParams    = 400
@@ -31,7 +31,7 @@ type ErrorCode struct {
 
 // 错误码映射
 var systemMessages = map[int]string{
-	SUCCESS:            "操作成功",
+	Success:            "请求成功",
 	InvalidParams:      "请求参数错误",
 	Unauthorized:       "未授权",
 	Forbidden:          "无权限",

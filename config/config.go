@@ -9,10 +9,11 @@ import (
 )
 
 type Options struct {
-	MySQL MySQLOptions `json:"mysql"`
-	Redis RedisOptions `json:"redis"`
-	Log   LogConfig    `json:"log"`
-	Jwt   JWT          `json:"jwt"`
+	MySQL    MySQLOptions `json:"mysql"`
+	Redis    RedisOptions `json:"redis"`
+	Log      LogConfig    `json:"log"`
+	Jwt      JWT          `json:"jwt"`
+	Language string       `json:"language"`
 }
 
 func New() (*Options, error) {
