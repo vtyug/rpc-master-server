@@ -26,6 +26,7 @@ func (h *WorkspaceHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) 
 	routerRegistry.Register("POST", "workspaces", "/create", h.Create, 1, "创建工作区")
 	// routerRegistry.Register("POST", "workspaces", "/delete", h.Delete, 1, "删除工作区")
 	// routerRegistry.Register("POST", "workspaces", "/rename", h.Rename, 1, "重命名工作区")
+	routerRegistry.Register("GET", "workspaces", "/list", h.List, 1, "获取工作区列表")
 }
 
 // Create 创建工作区
@@ -61,4 +62,20 @@ func (h *WorkspaceHandler) Create(c *gin.Context) {
 	resp.Name = workspace.Name
 
 	result.Success(resp)
+}
+
+func (h *WorkspaceHandler) List(c *gin.Context) {
+
+	result := response.NewResult(c)
+	workspaces := []model.Workspace{}
+	if err := h.DB.Where("owner_id = ?", 1).Find(&workspaces).Error; err != nil {
+		h.Logger.Error("get workspace list failed", zap.Error(err))
+		result.FailWithMsg(response.Success, "get workspace list failed")
+		return
+	}
+	
+
+	result.Success(map[string]interface{}{
+		"list": workspaces,
+	})
 }

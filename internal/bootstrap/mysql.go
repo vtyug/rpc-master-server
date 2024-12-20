@@ -59,10 +59,11 @@ func Migrate() {
 		// &model.Team{},
 		// &model.TeamMember{},
 		// &model.TeamInvite{},
-		&model.Workspace{},
-		&model.Collections{},
-		&model.Folder{},
-		&model.FolderClosure{},
+		&model.Request{},
+		// &model.Workspace{},
+		// &model.Collections{},
+		// &model.Folder{},
+		// &model.FolderClosure{},
 	)
 	if err != nil {
 		global.Log.Error("数据库迁移失败", zap.Error(err))

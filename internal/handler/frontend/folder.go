@@ -26,6 +26,7 @@ func (h *FolderHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) {
 	routerRegistry.Register("POST", "folder", "/create", h.Create, 1, "创建文件夹")
 	routerRegistry.Register("POST", "folder", "/delete", h.Delete, 1, "删除文件夹")
 	routerRegistry.Register("POST", "folder", "/rename", h.Rename, 1, "重命名文件夹")
+	routerRegistry.Register("GET", "folder", "/list", h.List, 1, "获取文件夹列表")
 }
 
 // Create 创建文件夹的处理函数
@@ -33,7 +34,7 @@ func (h *FolderHandler) Create(c *gin.Context) {
 	var req struct {
 		CollectionID string `json:"collection_id" binding:"required,uuid"`
 		Name         string `json:"name"`
-		ParentID     string `json:"parent_id"`
+		FolderID     string `json:"folder_id"`
 	}
 	result := response.NewResult(c)
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,7 +57,7 @@ func (h *FolderHandler) Create(c *gin.Context) {
 
 	// 创建新文件夹
 	folder := model.Folder{
-		CollectionID: collection.ID,
+		CollectionID: collection.CollectionID,
 		Name:         req.Name,
 		FolderID:     uid.NewUUID(),
 	}
@@ -79,10 +80,10 @@ func (h *FolderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// 如果提供了 ParentID，插入父子关系
-	if req.ParentID != "" {
+	// 如果提供了 FolderID，插入父子关系
+	if req.FolderID != "" {
 		var parentClosures []model.FolderClosure
-		if err := h.DB.Where("descendant = ?", req.ParentID).Find(&parentClosures).Error; err != nil {
+		if err := h.DB.Where("descendant = ?", req.FolderID).Find(&parentClosures).Error; err != nil {
 			h.Logger.Error("get parent folder closures failed", zap.Error(err))
 			result.FailWithMsg(response.ServerError, "get parent folder closures failed")
 			return
@@ -109,9 +110,9 @@ func (h *FolderHandler) Create(c *gin.Context) {
 
 		// 插入父子关系
 		var parentChildClosure model.FolderClosure
-		if err := h.DB.Where("ancestor = ? AND descendant = ?", req.ParentID, folder.FolderID).First(&parentChildClosure).Error; err != nil {
+		if err := h.DB.Where("ancestor = ? AND descendant = ?", req.FolderID, folder.FolderID).First(&parentChildClosure).Error; err != nil {
 			parentChildClosure = model.FolderClosure{
-				Ancestor:   req.ParentID,
+				Ancestor:   req.FolderID,
 				Descendant: folder.FolderID,
 				Depth:      1,
 			}
@@ -171,5 +172,22 @@ func (h *FolderHandler) Rename(c *gin.Context) {
 	result.Success(map[string]interface{}{
 		"id":   req.ID,
 		"name": req.Name,
+	})
+}
+
+// List 获取文件夹列表
+func (h *FolderHandler) List(c *gin.Context) {
+	result := response.NewResult(c)
+
+	collectionID := c.Query("collection_id")
+
+	folders := []model.Folder{}
+	if err := h.DB.Where("collection_id = ?", collectionID).Find(&folders).Error; err != nil {
+		h.Logger.Error("get folder list failed", zap.Error(err))
+		result.FailWithMsg(response.ServerError, "get folder list failed")
+		return
+	}
+	result.Success(map[string]interface{}{
+		"list": folders,
 	})
 }

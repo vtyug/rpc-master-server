@@ -17,4 +17,8 @@ func RegisterFrontendRoutes(routerRegistry *router.RouteRegistry) {
 	// workspace 工作区
 	workspaceHandler := NewWorkspaceHandler()
 	workspaceHandler.RegisterRoutes(routerRegistry)
+
+	// request 请求
+	requestHandler := NewRequestHandler()
+	requestHandler.RegisterRoutes(routerRegistry)
 }
