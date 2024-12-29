@@ -59,9 +59,9 @@ func Migrate() {
 		// &model.Team{},
 		// &model.TeamMember{},
 		// &model.TeamInvite{},
-		&model.Request{},
+		// &model.Request{},
 		// &model.Workspace{},
-		// &model.Collections{},
+		&model.Collections{},
 		// &model.Folder{},
 		// &model.FolderClosure{},
 	)

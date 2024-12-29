@@ -6,9 +6,9 @@ import "time"
 type RequestType string
 
 const (
-	HTTP      RequestType = "HTTP"
+	HTTP1     RequestType = "HTTP"
 	WebSocket RequestType = "WebSocket"
-	GRPC      RequestType = "gRPC"
+	GRPC1     RequestType = "gRPC"
 )
 
 type RequestMethod string

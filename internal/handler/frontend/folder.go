@@ -23,10 +23,10 @@ func NewFolderHandler() *FolderHandler {
 }
 
 func (h *FolderHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) {
-	routerRegistry.Register("POST", "folder", "/create", h.Create, 1, "创建文件夹")
-	routerRegistry.Register("POST", "folder", "/delete", h.Delete, 1, "删除文件夹")
-	routerRegistry.Register("POST", "folder", "/rename", h.Rename, 1, "重命名文件夹")
-	routerRegistry.Register("GET", "folder", "/list", h.List, 1, "获取文件夹列表")
+	routerRegistry.Register("POST", "folder", "/create", h.Create, 2, "创建文件夹")
+	routerRegistry.Register("POST", "folder", "/delete", h.Delete, 2, "删除文件夹")
+	routerRegistry.Register("POST", "folder", "/rename", h.Rename, 2, "重命名文件夹")
+	routerRegistry.Register("GET", "folder", "/list", h.List, 2, "获取文件夹列表")
 }
 
 // Create 创建文件夹的处理函数

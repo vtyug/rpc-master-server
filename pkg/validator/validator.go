@@ -4,6 +4,7 @@ import (
 	"FastGo/internal/global"
 	"log"
 	"regexp"
+	"strconv"
 	"unicode"
 
 	"github.com/gin-gonic/gin/binding"
@@ -116,7 +117,17 @@ func validateIDCard(fl validator.FieldLevel) bool {
 }
 
 func validateID(fl validator.FieldLevel) bool {
-	return idRegex.MatchString(fl.Field().String())
+	id := fl.Field().String()
+	if !idRegex.MatchString(id) {
+		return false
+	}
+	// 添加新的校验逻辑，例如检查ID是否在某个范围内
+	// 假设ID必须在1到1000之间
+	idValue, err := strconv.Atoi(id)
+	if err != nil || idValue < 1 || idValue > 100000000 {
+		return false
+	}
+	return true
 }
 
 func validateAPIKey(fl validator.FieldLevel) bool {
@@ -209,7 +220,7 @@ func TranslateError(err error) string {
 				if lang == "en" {
 					msg = "Invalid ID format, must be a positive integer"
 				} else {
-					msg = "ID 格式不正确，必须是正整数"
+					msg = "ID 格式不正确，必须大于0的整数"
 				}
 			case "api_key":
 				if lang == "en" {

@@ -23,7 +23,7 @@ func NewRequestHandler() *RequestHandler {
 }
 
 func (h *RequestHandler) RegisterRoutes(routerRegistry *router.RouteRegistry) {
-	routerRegistry.Register("POST", "request", "/create", h.Create, 1, "创建请求")
+	routerRegistry.Register("POST", "request", "/create", h.Create, 2, "创建请求")
 }
 
 func (h *RequestHandler) Create(c *gin.Context) {

@@ -30,7 +30,7 @@ func TokenAuth() gin.HandlerFunc {
 		token = strings.TrimPrefix(token, "Bearer ")
 
 		// 解析 token
-		j := jwt.New("your-secret-key") // TODO: 从配置文件获取密钥
+		j := jwt.New("yug-fastgo")
 		claims, err := j.ParseToken(token)
 		if err != nil {
 			switch err {
